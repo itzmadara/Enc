@@ -7,7 +7,6 @@ from bot.config import _bot, conf
 from bot.workers.auto.schedule import addjob, scheduler
 from bot.workers.handlers.queue import enleech, enleech2
 
-from .bot_utils import RSS_DICT as rss_dict
 from .bot_utils import check_cmds, get_html
 from .db_utils import save2db2
 from .log_utils import log
@@ -32,11 +31,11 @@ async def rss_monitor():
         log(e="RSS_CHAT not added! Shutting down rss scheduler...")
         scheduler.shutdown(wait=False)
         return
-    if len(rss_dict) == 0:
+    if len(_bot.rss_dict) == 0:
         scheduler.pause()
         return
     all_paused = True
-    for title, data in list(rss_dict.items()):
+    for title, data in list(_bot.rss_dict.items()):
         try:
             if data["paused"]:
                 continue
@@ -51,6 +50,8 @@ async def rss_monitor():
             last_title = rss_d.entries[0]["title"]
             if data["last_feed"] == last_link or data["last_title"] == last_title:
                 continue
+            if not _bot.rss_ran_once:
+                data["allow_rss_spam"] = True
             feed_count = 0
             feed_list = []
             while True:
@@ -66,6 +67,9 @@ async def rss_monitor():
                     log(
                         e=f"Reached Max index no. {feed_count} for this feed: {title}. Maybe you need to use less RSS_DELAY to not miss some torrents"
                     )
+                    if not data.get("allow_rss_spam"):
+                        log(e="Due to spam prevention, RSS feed has been reset.")
+                        feed_list = []
                     break
                 parse = True
                 for flist in data["inf"]:
@@ -93,10 +97,14 @@ async def rss_monitor():
                     await fake_event_handler(event)
                 await asyncio.sleep(1)
             async with rss_dict_lock:
-                rss_dict[title].update(
-                    {"last_feed": last_link, "last_title": last_title}
+                _bot.rss_dict[title].update(
+                    {
+                        "allow_rss_spam": False,
+                        "last_feed": last_link,
+                        "last_title": last_title,
+                    }
                 )
-            await save2db2(rss_dict, "rss")
+            await save2db2(_bot.rss_dict, "rss")
             log(e=f"Feed Name: {title}")
             log(e=f"Last item: {last_link}")
         except Exception as e:
@@ -105,6 +113,8 @@ async def rss_monitor():
     if all_paused:
         scheduler.pause()
         log(e="No active rss feed\nRss Monitor has been paused!")
+    elif not _bot.rss_ran_once:
+        _bot.rss_ran_once = True
 
 
 async def fake_event_handler(event):

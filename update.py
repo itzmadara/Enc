@@ -3,6 +3,7 @@ import traceback
 
 from decouple import config
 from pathlib import Path
+from subprocess import check_output
 from subprocess import run as bashrun
 
 try:
@@ -14,7 +15,7 @@ try:
     AUPR = config("ALWAYS_UPDATE_PY_REQ", default=False, cast=bool)
     UPSTREAM_REPO = config(
         "UPSTREAM_REPO",
-        default="https://github.com/Nubuki-all/Tg-encoder")
+        default="https://github.com/Nubuki-all/Enc")
     UPSTREAM_BRANCH = config("UPSTREAM_BRANCH", default="main")
 
 except Exception:
@@ -41,19 +42,32 @@ def varssaver(evars, files):
 r_filep = Path("Auto-rename.txt")
 rvars = varsgetter(r_filep)
 update_check = Path("update")
+cmd = (
+    f"git switch {UPSTREAM_BRANCH} -q \
+    && git pull -q "
+    "&& git reset --hard @{u} -q \
+    && git clean -df -q"
+)
+cmd2 = f"git init -q \
+       && git config --global user.email 117080364+Niffy-the-conqueror@users.noreply.github.com \
+       && git config --global user.name Niffy-the-conqueror \
+       && git add . \
+       && git commit -sm update -q \
+       && git remote add origin {UPSTREAM_REPO} \
+       && git fetch origin -q \
+       && git reset --hard origin/{UPSTREAM_BRANCH} -q \
+       && git switch {UPSTREAM_BRANCH} -q"
 
 try:
     if ALWAYS_DEPLOY_LATEST is True or update_check.is_file():
-        if os.path.exists('.git'):
-            bashrun(["rm", "-rf", ".git"])
-        update = bashrun([f"git init -q \
-                       && git config --global user.email 117080364+Niffy-the-conqueror@users.noreply.github.com \
-                       && git config --global user.name Niffy-the-conqueror \
-                       && git add . \
-                       && git commit -sm update -q \
-                       && git remote add origin {UPSTREAM_REPO} \
-                       && git fetch origin -q \
-                       && git reset --hard origin/{UPSTREAM_BRANCH} -q"], shell=True)
+        if UPSTREAM_BRANCH == "main":
+            bashrun(["rm -rf .git"], shell=True)
+        if os.path.exists('.git') and check_output(
+            ["git config --get remote.origin.url"],
+                shell=True).decode().strip() == UPSTREAM_REPO:
+            update = bashrun([cmd], shell=True)
+        else:
+            update = bashrun([cmd2], shell=True)
         if AUPR:
             bashrun(["pip3", "install", "-r", "requirements.txt"])
         if update.returncode == 0:
