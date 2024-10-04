@@ -267,6 +267,8 @@ def get_flag(lang_t):
             lang_t = "ind"
         elif lang_t.casefold() == "ind":
             lang_t = "Indonesia"
+        elif lang_t.casefold() == "chi":
+            lang_t = "China"
         try:
             lang_t = pycountry.countries.search_fuzzy(lang_t)
         except Exception:
@@ -422,7 +424,11 @@ async def parse(
         if a_con:
             file_name += f" [{a_con}]"
         file_name2 = file_name.replace(f_title, title)
-        file_name2 = file_name2.replace(release_name, release_name_b)
+        file_name2 = (
+            file_name2.replace(release_name, release_name_b)
+            if release_name
+            else file_name2
+        )
         file_name2 = (
             file_name2.replace(f"[{a_con}]", f"- {et} [{a_con}]")
             if et and a_con
@@ -690,7 +696,8 @@ async def simplecap(
             te = str(json.get("episodes"))
             te = "0" + str(te) if epi.startswith("0") else te
         except Exception:
-            log(Exception)
+            # log(Exception)
+            pass
 
         title = string.capwords(title)
         ar = txt_to_str(ar_file)

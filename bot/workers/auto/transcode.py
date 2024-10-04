@@ -242,6 +242,8 @@ async def thing():
                 mark_file_as_done(einfo.select, queue_id)
                 await save2db()
                 await save2db("batches")
+                if conf.COMP_MODE:
+                    download.un_register(True)
                 await asyncio.sleep(2)
                 return
             dl = download.path
@@ -261,6 +263,8 @@ async def thing():
             mark_file_as_done(einfo.select, queue_id)
             await save2db()
             await save2db("batches")
+            if download and conf.COMP_MODE:
+                download.un_register(True)
             return
         edt = time.time()
         dtime = tf(edt - sdt)
@@ -340,11 +344,25 @@ async def thing():
         if file_exists(mux_file):
             with open(mux_file, "r") as file:
                 mux_args = file.read().rstrip("\n").rstrip()
+            o_out = out
+            o_fold, o_fname = path_split(out)
+            o_ext = split_ext(o_fname)[-1]
+            file_name, metadata_name = await parse(
+                name,
+                o_fname,
+                o_ext,
+                anilist=ani,
+                v=v,
+                folder=o_fold,
+                _filter=f,
+                direct=n,
+            )
+            out = f"{_dir}/{file_name}"
             smt = time.time()
-            mux_args = await another(mux_args, title, epi, sn, metadata_name, dl)
+            mux_args = await another(mux_args, title, epi, sn, metadata_name, o_out)
             ffmpeg = 'ffmpeg -i """{}""" ' f"{mux_args} -codec copy" ' """{}""" -y'
             _out = split_ext(out)[0] + " [Muxing]" + split_ext(out)[1]
-            cmd = ffmpeg.format(out, _out)
+            cmd = ffmpeg.format(o_out, _out)
             encode = encoder(_id, event=msg_t)
             await encode.start(cmd)
             stderr = (await encode.await_completion())[1]
@@ -368,7 +386,7 @@ async def thing():
                 await save2db()
                 await save2db("batches")
                 return
-            s_remove(out)
+            s_remove(o_out)
             copy_file(_out, out)
             s_remove(_out)
             emt = time.time()

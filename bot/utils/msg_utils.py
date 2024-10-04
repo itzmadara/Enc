@@ -319,6 +319,7 @@ async def report_encode_status(
         await msg_2_delete.delete()
     cancelled = None
     log_id = None
+    reportee = None
     if log_msg:
         log_id = f"{log_msg.chat_id}:{log_msg.id}"
     if process.returncode != 0:
@@ -340,8 +341,15 @@ async def report_encode_status(
                     reply += f"by {canceller.mention()}."
         else:
             reply += f"Failed. {enmoji2()}\nLogs available below."
+            if _bot.report_failed_enc and user:
+                reportee = int(conf.OWNER.split()[0])
+                chat = msg.chat_id if not pyro_msg else msg.chat.id
+                if reportee == int(chat):
+                    reportee = None
 
         reply += "!"
+        if reportee:
+            report = await tele.send_message(reportee, reply)
         if not pyro_msg:
             await msg.edit(reply, buttons=None)
         else:
@@ -371,6 +379,8 @@ async def report_encode_status(
             log(er)
         if error and log_msg:
             await log_msg.reply(error)
+        if error and reportee:
+            await report.reply(error)
     else:
         reply = f"**{_is}** "
         if file:
@@ -383,6 +393,7 @@ async def report_encode_status(
 
 
 async def report_failed_download(download, msg, file, user=None):
+    pyro_msg = True if isinstance(msg, pyrogram.types.Message) else False
     reply = f"Download of `{file}` "
     if download.is_cancelled:
         reply += "was cancelled."
@@ -390,13 +401,18 @@ async def report_failed_download(download, msg, file, user=None):
             not user or (user and download.canceller.id != user)
         ):
             reply += " by "
-            if not isinstance(msg, pyrogram.types.Message):
+            if not pyro_msg:
                 reply += f"[{download.canceller.first_name}](tg://user?id={user})"
             else:
                 reply += download.canceller.mention()
     else:
         reply += f"failed.\n- `{download.download_error}`"
     reply += "!"
+    if not download.is_cancelled and user and _bot.report_failed_dl:
+        reportee = int(conf.OWNER.split()[0])
+        chat = msg.chat_id if not pyro_msg else msg.chat.id
+        if not reportee == int(chat):
+            await tele.send_message(reportee, reply)
     return await msg.edit(reply)
 
 

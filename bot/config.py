@@ -20,6 +20,7 @@ from decouple import config
 class Config:
     def __init__(self):
         try:
+            self.ADL_TIMEOUT = config("ARIA2_DL_TIMEOUT", default=0, cast=int)
             self.ALWAYS_DEPLOY_LATEST = config(
                 "ALWAYS_DEPLOY_LATEST", default=False, cast=bool
             )
@@ -34,6 +35,7 @@ class Config:
             self.CAP_DECO = config("CAP_DECO", default="◉")
             self.C_LINK = config("C_LINK", default="@ANi_MiNE")
             self.CMD_SUFFIX = config("CMD_SUFFIX", default=str())
+            self.COMP_MODE = config("COMPATIBILITY_MODE", default=True, cast=bool)
             self.DATABASE_URL = config("DATABASE_URL", default=None)
             self.DBNAME = config("DBNAME", default="ENC")
             self.DEV = config("DEV", default=0, cast=int)
@@ -65,12 +67,18 @@ class Config:
             self.OVR = config("OVR", default=None)
             self.OWNER = config("OWNER")
             self.PAUSE_ON_DL_INFO = config("PODI", default=True, cast=bool)
+            self.QDL_TIMEOUT = config("QBIT_DL_TIMEOUT", default=0, cast=int)
             self.QBIT_PORT = config("QBIT_PORT", default=8090, cast=int)
             self.QBIT_TIMEOUT = config("QBIT_TIMEOUT", default=20, cast=int)
+            self.RELEASER = config("RELEASER", default="A-M|ANi-MiNE")
+            self.REPORT_FAILED = config("REPORT_FAILED", default=True, cast=bool)
+            self.REPORT_FAILED_DL = config("REPORT_FAILED_DL", default=False, cast=bool)
+            self.REPORT_FAILED_ENC = config(
+                "REPORT_FAILED_ENC", default=False, cast=bool
+            )
             self.RSS_CHAT = config("RSS_CHAT", default=0, cast=int)
             self.RSS_DELAY = config("RSS_DELAY", default=60, cast=int)
             self.RSS_DIRECT = config("RSS_DIRECT", default=True, cast=bool)
-            self.RELEASER = config("RELEASER", default="A-M|ANi-MiNE")
             self.TELEGRAPH_API = config(
                 "TELEGRAPH_API", default="https://api.telegra.ph"
             )
@@ -93,9 +101,6 @@ class Config:
 
 
 class Runtime_Config:
-    # will slowly replace the Var_list class in utils.bot_utils
-    # Progress 1 / 2
-    # checking for missed variables
     def __init__(self):
         self.aria2 = None
         self.batch_ing = []
@@ -117,6 +122,8 @@ class Runtime_Config:
         self.queue_status = []
         self.r_queue = []
         self.repo_branch = None
+        self.report_failed_dl = False
+        self.report_failed_enc = False
         self.rss_dict = {}
         self.rss_ran_once = False
         self.sas = False

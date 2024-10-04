@@ -21,6 +21,11 @@ if file_exists(version_file):
 
 LOGS.info(f"Branch: {_bot.repo_branch or 'Unknown!'}")
 LOGS.info(vmsg)
+
+if os.path.isdir("/tgenc"):
+    _bot.docker_deployed = True
+    LOGS.info("Docker: Yes")
+
 LOGS.info("=" * 30)
 
 if conf.THUMB:
@@ -32,6 +37,16 @@ if conf.DL_STUFF:
 
 if conf.NO_TEMP_PM:
     _bot.temp_only_in_group = True
+
+if conf.REPORT_FAILED:
+    _bot.report_failed_dl = True
+    _bot.report_failed_enc = True
+
+if conf.REPORT_FAILED_DL:
+    _bot.report_failed_dl = True
+
+if conf.REPORT_FAILED_ENC:
+    _bot.report_failed_enc = True
 
 if not file_exists(ffmpeg_file):
     with open(ffmpeg_file, "w") as file:
@@ -57,12 +72,8 @@ if not os.path.isdir("dump/"):
     os.mkdir("dump/")
 if not os.path.isdir("mux/"):
     os.mkdir("mux/")
-if not os.path.isdir("thumb/"):
-    os.mkdir("thumb/")
-
-
-if os.path.isdir("/tgenc"):
-    _bot.docker_deployed = True
+if not os.path.isdir("minfo/"):
+    os.mkdir("minfo/")
 
 if conf.TEMP_USER:
     for t in conf.TEMP_USER.split():
